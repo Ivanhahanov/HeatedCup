@@ -4,11 +4,21 @@ services:
     image: eclipse-mosquitto
     hostname: mosquitto
     container_name: mosquitto
+    ports:
+    - 1883:1883
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/reverse_proxy.conf:/etc/nginx/conf.d/default.conf
+    ports:
+    - 80:80
+    depends_on:
+      - api
+
 
   api:
     build:
       context: Api
-    ports:
-    - 8000:8000
     depends_on:
       - mosquitto

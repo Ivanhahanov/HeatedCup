@@ -1,7 +1,7 @@
 package main
 
 import (
-	mqtt "HeatedCup/Api/mqtt"
+	"HeatedCup/Api/mqtt"
 	"encoding/json"
 	"fmt"
 	"log"
