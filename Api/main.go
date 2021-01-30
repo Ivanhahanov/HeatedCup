@@ -1,7 +1,7 @@
 package main
 
 import (
-	main2 "HeatedCup/Api/mqtt"
+	mqtt "HeatedCup/Api/mqtt"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,7 +23,7 @@ func GetCapStatus() string {
 }
 
 func SendMqttCommand(commands Commands) string {
-	s := main2.Settings{Broker: "mosquitto", Port: 1883}
+	s := mqtt.Settings{Broker: "mosquitto", Port: 1883}
 	client, err := s.MqttConnect()
 	if err != nil {
 		panic(err)
@@ -40,7 +40,7 @@ func SendMqttCommand(commands Commands) string {
 	if commands.Timeout == 0 {
 		commands.Timeout = 0.3
 	}
-	message := main2.CupMessage(commands)
+	message := mqtt.CupMessage(commands)
 	message.SendMessage(client)
 	client.Disconnect(250)
 	return ""
