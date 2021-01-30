@@ -1,39 +1,49 @@
 package main
 
 import (
-	"bytes"
+	main2 "HeatedCup/Api/mqtt"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 )
-
-var CupUrl = os.Getenv("CupUrl")
 
 type server struct{}
 
 type Commands struct {
-	Command string `json:"command"`
-	Timeout int    `json:"timeout"`
+	Class   string  `json:"class"`
+	Id      int     `json:"id"`
+	Command string  `json:"command"`
+	Timeout float32 `json:"timeout"`
+	Mode    string  `json:"mode"`
 }
 
 func GetCapStatus() string {
 	return "OK"
 }
 
-func SendCommand(commands *Commands) string {
-	data, err := json.Marshal(commands)
-	resp, err := http.Post(CupUrl, "application/json",
-		bytes.NewBuffer(data))
-
+func SendMqttCommand(commands Commands) string {
+	s := main2.Settings{Broker: "mosquitto", Port: 1883}
+	client, err := s.MqttConnect()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
-
-	var res string
-	json.NewDecoder(resp.Body).Decode(&res)
-	return res
+	if commands.Class == "" {
+		commands.Class = "cup"
+	}
+	if commands.Id == 0 {
+		commands.Id = 1
+	}
+	if commands.Mode == "" {
+		commands.Mode = "heat"
+	}
+	if commands.Timeout == 0 {
+		commands.Timeout = 0.3
+	}
+	message := main2.CupMessage(commands)
+	message.SendMessage(client)
+	client.Disconnect(250)
+	return ""
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +61,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 400)
 			return
 		}
-		result := SendCommand(&c)
-		w.Write([]byte(fmt.Sprintf(`{"command": "%s", "timeout":"%d", "result":"%s"}`, c.Command, c.Timeout, result)))
+		result := SendMqttCommand(c)
+		w.Write([]byte(fmt.Sprintf(`{"command": "%s", "timeout":"%f", "result":"%s"}`, c.Command, c.Timeout, result)))
 	}
 }
 
